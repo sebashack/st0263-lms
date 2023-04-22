@@ -1,0 +1,22 @@
+version: '3.1'
+services:
+  moodle:
+    container_name: moodle
+    image: bitnami/moodle:4.1.2
+    ports:
+      - "80:8080"
+      - "443:8443"
+    restart: always
+    environment:
+      MOODLE_HOST: localhost
+      MOODLE_DATABASE_TYPE: mysqli
+      MOODLE_DATABASE_HOST: 192.168.32.1
+      MOODLE_DATABASE_PORT_NUMBER: 3306
+      MOODLE_DATABASE_USER: moodle
+      MOODLE_DATABASE_NAME: moodledb
+      MOODLE_DATABASE_PASSWORD: secret
+      MOODLE_USERNAME: user
+      MOODLE_PASSWORD: secret
+#     MOODLE_SKIP_BOOTSTRAP: yes
+    volumes:
+      - ${MOODLE_DATA}:/bitnami
