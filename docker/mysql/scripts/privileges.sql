@@ -1,3 +1,0 @@
-GRANT ALL ON *.* TO 'wordpress'@'%' WITH GRANT OPTION;
-
-FLUSH PRIVILEGES;

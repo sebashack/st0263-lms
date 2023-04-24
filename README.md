@@ -47,5 +47,64 @@ On the balancing layer, we have the green boxes with a `Backend Service` that ba
 instances in the instance group. The backend service, in turn, forwards the responses from the Moodle instances to the load
 balancer front-end. This front-end is in charge of serving the responses to the web browser clients that connect via HTTPs.
 
+Notice that there is a VPC for intra-communication among our services.
+
 Finally, the Google Cloud DNS was also used for creating the zone to manage the `*.sebastianpg.pro` domain. For this project
 the subdomain `reto4.sebastianpg.pro` was created.
+
+
+## 3) Development environment
+
+
+There is not a lot of material for the development environment. However, we did try out the `bitnami/moodle` image via
+`docker-compose` and a local dockerized MySQL instance. Once we learned how to configure the docker-compose file for
+bitnami/moodle we got rid of the local version and started to set up the production deployment directly on GCP.
+
+
+### 3.3) Project structure
+
+The following directory structure shows some of the configuration files that we implemented throughout the deployment process:
+
+```
+st0263-lms
+├── configs
+│   └── fstab
+├── docker
+│   └── moodle
+│       ├── bash.sh
+│       ├── docker-compose.yaml
+│       └── service.sh
+├── first-time-install.sh
+├── get-cert.sh
+└── README.md
+
+```
+
+## 4) Deployment details
+
+### 4.1) NFS server
+
+For the NFS we decided to use a GCP/NetAPP NFS volume:
+
+![volume.png](assets/volumes.png)
+
+The volume of an standard CVS-performance type which works on a regional basis. In this case it was deployed the us-east4 region
+as not all regions provide this service. The reason why we decided to go with this type of volume is that the regular CVS
+worked on a global basis (multi-region) and its configuration turned out to be more complex and we could not make it work properly
+in our default VPC.
+
+### 4.2) Mysql Cloud Service
+
+For the database we decided to use the Google SQL cloud service:
+
+![db-engine](assets/gcp-sql.png)
+
+This instance is running on the `10.91.0.3` private IP inside our default VPC. It is a `sandbox` type of instance which
+is the least performant but allowed us to save several credits. Once the database engine was deployed, we created the
+database `moodledb` and the user `moodle`:
+
+![database](assets/gcp-db.png)
+
+![db-user](assets/gcp-db-user.png)
+
+### 4.3) Instance group and autoscaling
