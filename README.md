@@ -93,6 +93,8 @@ as not all regions provide this service. The reason why we decided to go with th
 worked on a global basis (multi-region) and its configuration turned out to be more complex and we could not make it work properly
 in our default VPC.
 
+Notice that this volume is being served on `10.67.98.4/moodle-shared` mounting point with the NFSv3 protocol.
+
 ### 4.2) Mysql Cloud Service
 
 For the database we decided to use the Google SQL cloud service:
@@ -107,4 +109,109 @@ database `moodledb` and the user `moodle`:
 
 ![db-user](assets/gcp-db-user.png)
 
-### 4.3) Instance group and autoscaling
+### 4.3) Virtual machine image and instance template
+
+First we created a regular GCP virtual machine running on a Ubuntu 22.04 image. On that machine we installed docker-compose
+and docker and ran a moodle instance with the following docker-compose configuration:
+
+```
+version: '3.1'
+services:
+  moodle:
+    container_name: moodle
+    image: bitnami/moodle:4.1.2
+    ports:
+      - "80:8080"
+      - "443:8443"
+    restart: always
+    environment:
+      MOODLE_DATABASE_TYPE: mysqli
+      MOODLE_DATABASE_HOST: 10.91.0.3
+      MOODLE_DATABASE_PORT_NUMBER: 3306
+      MOODLE_DATABASE_USER: moodle
+      MOODLE_DATABASE_NAME: moodledb
+      MOODLE_DATABASE_PASSWORD: secret
+      MOODLE_USERNAME: user
+      MOODLE_PASSWORD: secret
+      MOODLE_SKIP_BOOTSTRAP: yes
+    volumes:
+      - ${MOODLE_DATA}:/bitnami
+
+```
+
+where `MOODLE_DATABASE_HOST` points to the MySQL instance mentioned in 4.2, and `MOODLE_DATA` is an environment variable
+with the value `/mnt/moodle-shared` where the NFS mounting point was established. The `/etc/fstab` file for this instance
+was also modified with the following configuration:
+
+```
+LABEL=cloudimg-rootfs   /        ext4   discard,errors=remount-ro       0 1
+LABEL=UEFI      /boot/efi       vfat    umask=0077      0 1
+
+10.67.98.4:/moodle-shared    /mnt/moodle-shared   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+```
+
+This way it would always mount the NFS volume at boot time.
+
+Once the virtual machine was equipped with the mounting point and the Moodle container we created an image out of it:
+
+![moodle-image](assets/moodle-image.png)
+
+This image is a replica of the VM's disk and it is possible to create identical instances out of it. Most importantly,
+this image was necessary to create our instance template:
+
+![instance-template](assets/instance-template.png)
+
+Instance templates are useful for allowing GCP instance groups replication of VM instances.
+
+### 4.4) Instance groups
+
+Given the instance image above we created an instance group for replicating the dockerized Moodle services:
+
+![instance-group](assets/instance-group.png)
+
+This instance group provides auto-scaling and it was set up in such a way that if the HTTP load of an instance was around 80%,
+a new virtual machine would be created automatically by GCP. Notice that for this project, we set the maximum number of
+instances to 3. This instance group also scales down instances in case that the demand is low.
+
+### 4.5) Static external IP
+
+We reserved the following IP address:
+
+![ip-addr](assets/ip-addresses.png)
+
+### 4.6) Google Cloud DNS
+
+We used the Google Cloud DNS to create the zone that would host the `*.sebastianpg.pro` domain and its subdomain `reto4.sebastianpg.pro`.
+The following DNS records were created:
+
+![zone](assets/dns-records.png)
+
+The `A` record pointed to the external IP mentioned in 4.5:
+
+![a-record](assets/a-record.png)
+
+
+### 4.7) SSL certificates and Domain
+
+The SSL certificates were created with `certbot` and its  `dns-google` plugin via the following command:
+
+```
+sudo certbot certonly -vvv --dns-google --dns-google-propagation-seconds 120 --dns-google-credentials ./eafit-networking-18bcb2ec5865.json -d "*.sebastianpg.pro"
+```
+
+The `eafit-networking-18bcb2ec5865.json` file is a credentials file for an account service that would allow certbot to
+access the DNS zone we created above and set up the TXT records for the ACME challenge:
+
+![service-account](/assets/service-account.png)
+
+Once the certificate was created, we used GCP's certificate manager to upload it and create a regional certificate for
+our load balancer:
+
+![cert-manager](/assets/cert-manager.png)
+
+![ssl-cert](/assets/ssl-cert.png)
+
+
+The domain was already hosted in `name.com` and we only had to set up the google DNS servers in the administrative console:
+
+![dnss](/assets/domain-host.png)
