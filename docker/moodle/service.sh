@@ -5,7 +5,7 @@ set -xeuf -o pipefail
 ROOT="$( readlink -f "$( dirname "${BASH_SOURCE[0]}" )" )"
 DOCKER_FILE="${ROOT}/docker-compose.yaml"
 
-export MOODLE_DATA="${ROOT}/moodle_shared"
+export MOODLE_DATA="/mnt/moodle-shared"
 
 if [[ $1 == "up" ]]; then
     docker-compose --file "$DOCKER_FILE" up --detach

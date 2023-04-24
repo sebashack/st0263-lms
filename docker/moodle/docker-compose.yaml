@@ -9,7 +9,7 @@ services:
     restart: always
     environment:
       MOODLE_DATABASE_TYPE: mysqli
-      MOODLE_DATABASE_HOST: 172.18.0.1
+      MOODLE_DATABASE_HOST: 10.91.0.3
       MOODLE_DATABASE_PORT_NUMBER: 3306
       MOODLE_DATABASE_USER: moodle
       MOODLE_DATABASE_NAME: moodledb

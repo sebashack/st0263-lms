@@ -1,0 +1,4 @@
+LABEL=cloudimg-rootfs   /        ext4   discard,errors=remount-ro       0 1
+LABEL=UEFI      /boot/efi       vfat    umask=0077      0 1
+
+10.67.98.4:/moodle-shared    /mnt/moodle-shared   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
