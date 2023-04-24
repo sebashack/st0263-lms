@@ -215,3 +215,51 @@ our load balancer:
 The domain was already hosted in `name.com` and we only had to set up the google DNS servers in the administrative console:
 
 ![dnss](/assets/domain-host.png)
+
+
+### 4.8) Load balancer
+
+Given the instance group, external static IP and SSL certificate mentioned in the previous sections, we were ready to create
+our load balancer:
+
+![lb](/assets/load-balancer.png)
+
+This load balancer has a back-end that forwards http requests to the machines in the instance group on port 80. On the other,
+it has a front-end that receives HTTPs requests from web clients. The front-end is bound to the static public IP address
+that we allocated above (35.212.110.48) and it establishes secure connection by using the SSL certificates that we created
+with certbot.
+
+
+## 5) Demo video with explanation
+
+
+The following link references a demo video with a functional Moodle service and a full explanation of the GCP services
+that were used:
+
+```
+https://www.youtube.com/watch?v=g3R3CVglGPE
+```
+
+We decided to deliver a vide instead of a real time presentation with the deployed service because we determined that
+by the time we would have to justify this project in person, we would run out of credits and we would not be able to show
+it. The following table shows the expenses that we had in less than 8 hours that this project was up while we were working on
+it:
+
+![costs](/assets/cost-table.png)
+
+Also, we determined that it would not be viable to bring this project down and set it up again for a in person justification
+because there are services such as volumes, static IPs and instance groups that cannot be put on "standby" and keep consuming credits
+regardless of whether the application is running or not. Finally, it would not be reasonable either to bring this project down
+after having completed it because configuring it takes a considerable amount of time.
+
+
+## 6) References
+
+- https://www.netapp.tv/player/25992/stream?assetType=movies&mcid=24840332017189846341712222156848506968
+- https://cloud.google.com/architecture/partners/netapp-cloud-volumes/setting-up-private-services-access
+- https://cloud.google.com/compute/docs/instance-groups
+- https://cloud.google.com/compute/docs/instance-templates
+- https://cloud.google.com/compute/docs/instance-templates/create-instance-templates
+- https://console.cloud.google.com/compute/images?tab=images&project=eafit-networking
+- https://cloud.google.com/load-balancing/docs/https/setting-up-https
+- https://certbot-dns-google.readthedocs.io/en/stable/#credentials
